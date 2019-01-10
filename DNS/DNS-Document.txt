@@ -1,0 +1,114 @@
+DDDDDDDDDDDDD        NNNNNNNN        NNNNNNNN   SSSSSSSSSSSSSSS 
+D::::::::::::DDD     N:::::::N       N::::::N SS:::::::::::::::S
+D:::::::::::::::DD   N::::::::N      N::::::NS:::::SSSSSS::::::S
+DDD:::::DDDDD:::::D  N:::::::::N     N::::::NS:::::S     SSSSSSS
+  D:::::D    D:::::D N::::::::::N    N::::::NS:::::S            
+  D:::::D     D:::::DN:::::::::::N   N::::::NS:::::S            
+  D:::::D     D:::::DN:::::::N::::N  N::::::N S::::SSSS         
+  D:::::D     D:::::DN::::::N N::::N N::::::N  SS::::::SSSSS    
+  D:::::D     D:::::DN::::::N  N::::N:::::::N    SSS::::::::SS  
+  D:::::D     D:::::DN::::::N   N:::::::::::N       SSSSSS::::S 
+  D:::::D     D:::::DN::::::N    N::::::::::N            S:::::S
+  D:::::D    D:::::D N::::::N     N:::::::::N            S:::::S
+DDD:::::DDDDD:::::D  N::::::N      N::::::::NSSSSSSS     S:::::S
+D:::::::::::::::DD   N::::::N       N:::::::NS::::::SSSSSS:::::S
+D::::::::::::DDD     N::::::N        N::::::NS:::::::::::::::SS 
+DDDDDDDDDDDDD        NNNNNNNN         NNNNNNN SSSSSSSSSSSSSSS   
+
+https://linuxconfig.org/configure-rndc-key-for-bind-dns-server-on-centos-7
+
+Read Only volume
+  -v nginx-vol:/usr/share/nginx/html:ro \
+
+
+
+╭─root@ubuntu /srv/docker/ippanel
+╰─# docker run --name ippanel -d \
+  --publish 53:53/tcp --publish 53:53/udp --publish 10000:10000/tcp \
+  --volume /srv/docker/ippanel:/data \
+  -e ROOT_PASSWORD=SecretPass \
+  sameersbn/bind
+╭─root@ubuntu /srv/docker/ippanel
+╰─# docker exec ippanel rndc-confgen
+╭─root@ubuntu /srv/docker/ippanel
+╰─# cat ./bind/etc/rndc.key
+╭─root@ubuntu /srv/docker/ippanel
+╰─# vim ./bind/etc/rndc.conf
+####################### like below #######################
+key "rndc-key" {
+        algorithm hmac-md5;
+        secret "TS5c+8oDq/gvaSOS4rD1zH==";
+};
+options {
+        default-key "rndc-key";
+        default-server 127.0.0.1;
+        default-port 953;
+};
+##########################################################
+╭─root@ubuntu /srv/docker/ippanel
+╰─# vim ./bind/etc/named.conf
+####################### like below #######################
+include "/etc/bind/named.conf.options";
+include "/etc/bind/named.conf.local";
+include "/etc/bind/named.conf.default-zones";
+include "/etc/bind/rndc.key";
+controls {
+      inet 127.0.0.1 port 953
+      allow { 127.0.0.1; } keys { "rndc-key"; };
+};
+--------- I Prefer that do not add '5' last line ---------
+##########################################################
+
+############## The Code Create hosts files. ##############
+if you want to handle it manualy should copy a hosts file,
+then edit it. In next step you should edit named.conf.local
+and duplicate last zone and change the domain, reload rndc.
+##########################################################
+╭─root@ubuntu /srv/docker/ippanel
+╰─# cp -p ./bind/lib/domain.example.hosts ./bind/lib/domain.new.hosts
+╭─root@ubuntu /srv/docker/ippanel
+╰─# vim ./bind/lib/domain.new.hosts
+╭─root@ubuntu /srv/docker/ippanel
+╰─# vim ./bind/etc/named.conf.local
+**********************************************
+zone "domain.new" {
+        type master;
+        file "/var/lib/bind/domain.new.hosts";
+        };
+**********************************************
+╭─root@ubuntu /srv/docker/ippanel
+╰─# docker exec ippanel2 rndc reload
+
+                                                                         
+LLLLLLLLLLL                                                              dddddddd
+L:::::::::L                                                              d::::::d
+L:::::::::L                                                              d::::::d
+LL:::::::LL                                                              d:::::d 
+  L:::::L                  ooooooooooo   rrrrr   rrrrrrrrr       ddddddddd:::::d 
+  L:::::L                oo:::::::::::oo r::::rrr:::::::::r    dd::::::::::::::d 
+  L:::::L               o:::::::::::::::or:::::::::::::::::r  d::::::::::::::::d 
+  L:::::L               o:::::ooooo:::::orr::::::rrrrr::::::rd:::::::ddddd:::::d 
+  L:::::L               o::::o     o::::o r:::::r     r:::::rd::::::d    d:::::d 
+  L:::::L               o::::o     o::::o r:::::r     rrrrrrrd:::::d     d:::::d 
+  L:::::L               o::::o     o::::o r:::::r            d:::::d     d:::::d 
+  L:::::L         LLLLLLo::::o     o::::o r:::::r            d:::::d     d:::::d 
+LL:::::::LLLLLLLLL:::::Lo:::::ooooo:::::o r:::::r            d::::::ddddd::::::dd
+L::::::::::::::::::::::Lo:::::::::::::::o r:::::r             d:::::::::::::::::d
+L::::::::::::::::::::::L oo:::::::::::oo  r:::::r              d:::::::::ddd::::d
+LLLLLLLLLLLLLLLLLLLLLLLL   ooooooooooo    rrrrrrr               ddddddddd   ddddd
+          JJJJJJJJJJJ              hhhhhhh                                                  
+          J:::::::::J              h:::::h                                                  
+          J:::::::::J              h:::::h                                                  
+          JJ:::::::JJ              h:::::h                                                  
+            J:::::J   ooooooooooo   h::::h hhhhh         aaaaaaaaaaaaa  rrrrr   rrrrrrrrr   
+            J:::::J oo:::::::::::oo h::::hh:::::hhh      a::::::::::::a r::::rrr:::::::::r  
+            J:::::Jo:::::::::::::::oh::::::::::::::hh    aaaaaaaaa:::::ar:::::::::::::::::r 
+            J:::::jo:::::ooooo:::::oh:::::::hhh::::::h            a::::arr::::::rrrrr::::::r
+            J:::::Jo::::o     o::::oh::::::h   h::::::h    aaaaaaa:::::a r:::::r     r:::::r
+JJJJJJJ     J:::::Jo::::o     o::::oh:::::h     h:::::h  aa::::::::::::a r:::::r     rrrrrrr
+J:::::J     J:::::Jo::::o     o::::oh:::::h     h:::::h a::::aaaa::::::a r:::::r            
+J::::::J   J::::::Jo::::o     o::::oh:::::h     h:::::ha::::a    a:::::a r:::::r            
+J:::::::JJJ:::::::Jo:::::ooooo:::::oh:::::h     h:::::ha::::a    a:::::a r:::::r            
+ JJ:::::::::::::JJ o:::::::::::::::oh:::::h     h:::::ha:::::aaaa::::::a r:::::r            
+   JJ:::::::::JJ    oo:::::::::::oo h:::::h     h:::::h a::::::::::aa:::ar:::::r            
+     JJJJJJJJJ        ooooooooooo   hhhhhhh     hhhhhhh  aaaaaaaaaa  aaaarrrrrrr 
